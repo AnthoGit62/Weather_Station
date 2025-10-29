@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Station Météo - Calais</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(to bottom, #7ec8ff, #cce6ff);
+      color: #000;
+      height: 100vh;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+    }
+
+    /* === COLONNE GAUCHE === */
+    .left-panel {
+      flex: 1.1;
+      margin-right: 15px;
+      background: #fff;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 90vh;
+      justify-content: space-evenly;
+    }
+
+    .chart-container { height: 25%; }
+
+    .toggle-btn {
+      align-self: center;
+      background: linear-gradient(135deg, #4a9eff, #0077cc);
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    }
+
+    .toggle-btn:hover {
+      transform: scale(1.05);
+      background: linear-gradient(135deg, #5ab0ff, #0088ff);
+    }
+
+    /* === CENTRE === */
+    .center-panel {
+      flex: 1.3;
+      background: #fff;
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      margin: 0 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 90vh;
+    }
+
+    .city { font-size: 2rem; font-weight: bold; margin-bottom: 5px; }
+    .day { font-size: 1.5rem; margin-bottom: 20px; color: #444; }
+
+    .weather-icon { width: 180px; height: 180px; margin: 25px auto; display: block; }
+
+    .temps { display: flex; justify-content: center; gap: 50px; margin-top: 10px; }
+
+    .temp-box { display: flex; flex-direction: column; align-items: center; }
+    .data-label { font-size: 1rem; color: #555; margin-bottom: 5px; }
+
+    .temperature-display {
+      font-family: 'Courier New', monospace;
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #000;
+      margin-bottom: 5px;
+    }
+
+    .temp-indoor { color: #ff9933; }
+    .temp-outdoor { color: #4a9eff; }
+
+    .details {
+      margin-top: 25px;
+      display: flex;
+      justify-content: center;
+      gap: 50px;
+    }
+
+    .details-item { text-align: center; }
+    .details-label { font-size: 1rem; color: #555; margin-bottom: 5px; }
+    .details-value {
+      font-family: 'Courier New', monospace;
+      font-size: 1.2rem;
+      color: #000;
+      font-weight: bold;
+    }
+
+    /* === DROITE === */
+    .right-panel {
+      flex: 0.9;
+      background: #fff;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      margin-left: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 90vh;
+      justify-content: flex-start;
+      gap: 10px;
+    }
+
+    .forecast-title {
+      font-size: 1.4rem;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #0077cc;
+      text-transform: uppercase;
+    }
+
+    .forecast-days {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      overflow-y: auto;
+      max-height: calc(90vh - 100px);
+    }
+
+    .forecast-day {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 0;
+      font-size: 1.1rem;
+      gap: 4px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .forecast-day img { width: 50px; height: 50px; }
+    .forecast-day span { font-weight: bold; color: #000; }
+
+    @media (max-width: 1024px) {
+      body { flex-direction: column; align-items: center; height: auto; }
+      .left-panel, .center-panel, .right-panel { width: 100%; margin: 10px 0; height: auto; }
+      .forecast-day { flex-direction: row; justify-content: space-between; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- GAUCHE -->
+  <div class="left-panel">
+    <button id="toggleButton" class="toggle-btn">🌡 Graphiques : Intérieur</button>
+    <div class="chart-container"><canvas id="chartTemperature"></canvas></div>
+    <div class="chart-container"><canvas id="chartPression"></canvas></div>
+    <div class="chart-container"><canvas id="chartHumidite"></canvas></div>
+  </div>
+
+  <!-- CENTRE -->
+  <div class="center-panel">
+    <div class="city">Calais</div>
+    <div class="day" id="current-day">LUNDI</div>
+    <img src="img/sun.png" alt="Météo" class="weather-icon" id="weather-icon">
+
+    <div class="temps">
+      <div class="temp-box">
+        <div class="data-label">Intérieur</div>
+        <div class="temperature-display temp-indoor" id="temp-int">--°C</div>
+      </div>
+      <div class="temp-box">
+        <div class="data-label">Extérieur</div>
+        <div class="temperature-display temp-outdoor" id="temp-ext">--°C</div>
+      </div>
+    </div>
+
+    <div class="details">
+      <div class="details-item">
+        <div class="details-label">Humidité</div>
+        <div class="details-value" id="humidite">--%</div>
+      </div>
+      <div class="details-item">
+        <div class="details-label">Pression</div>
+        <div class="details-value" id="pression">-- hPa</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DROITE -->
+  <div class="right-panel">
+    <div class="forecast-title">Prévisions</div>
+    <div class="forecast-days" id="forecast"></div>
+  </div>
+
+  <script>
+    let chartTemp, chartPress, chartHum;
+    let isIndoor = true;
+
+    function setCurrentDay() {
+      const today = new Date();
+      const options = { weekday: "long" };
+      document.getElementById("current-day").textContent =
+        today.toLocaleDateString("fr-FR", options).toUpperCase();
+    }
+
+    function weatherCodeToIcon(code) {
+      const base = "img/";
+      if (code === 0) return base + "sun.png";
+      if (code <= 3) return base + "nuages-et-soleil.png";
+      if (code >= 45 && code <= 48) return base + "fog.png";
+      if (code >= 51 && code <= 57) return base + "drizzle.png";
+      if (code >= 61 && code <= 67) return base + "pluie-abondante.png";
+      if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return base + "snow.png";
+      if (code >= 80 && code <= 82) return base + "shower.png";
+      if (code >= 95 && code <= 99) return base + "storm.png";
+      return base + "clouds.png";
+    }
+
+    async function fetchForecast() {
+      const lat = 50.95, lon = 1.85;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe/Paris`;
+      const resp = await fetch(url);
+      const data = await resp.json();
+      const container = document.getElementById("forecast");
+      container.innerHTML = "";
+      for (let i = 1; i <= 5; i++) {
+        const day = new Date(data.daily.time[i]).toLocaleDateString("fr-FR", { weekday: "long" });
+        const icon = weatherCodeToIcon(data.daily.weathercode[i]);
+        const max = data.daily.temperature_2m_max[i];
+        const min = data.daily.temperature_2m_min[i];
+        container.innerHTML += `
+          <div class="forecast-day">
+            <div>${day.charAt(0).toUpperCase() + day.slice(1)}</div>
+            <img src="${icon}" alt="météo">
+            <span>${Math.round(max)}° / ${Math.round(min)}°</span>
+          </div>`;
+      }
+    }
+
+    async function fetchCurrentWeatherIcon() {
+      try {
+        const lat = 50.95, lon = 1.85;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=weathercode&timezone=Europe/Paris`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+        document.getElementById("weather-icon").src = weatherCodeToIcon(data.current.weathercode);
+      } catch (e) { console.log("Erreur météo actuelle :", e); }
+    }
+
+    async function loadCurrentWeather() {
+      try {
+        const respInt = await fetch("/data/today");
+        const dataInt = await respInt.json();
+        const latestInt = dataInt[dataInt.length - 1];
+
+        const respExt = await fetch("/data/today_ext");
+        const dataExt = await respExt.json();
+        const latestExt = dataExt[dataExt.length - 1];
+
+        if(latestInt) document.getElementById("temp-int").textContent = Math.round(latestInt.temperature) + "°C";
+        if(latestExt) document.getElementById("temp-ext").textContent = Math.round(latestExt.temperature) + "°C";
+        if(latestInt) document.getElementById("pression").textContent = latestInt.pression + " hPa";
+        if(latestExt) document.getElementById("humidite").textContent = latestExt.humidite + "%";
+      } catch(e){ console.log("Erreur météo actuelle", e); }
+    }
+
+    async function loadCharts() {
+      try {
+        const url = isIndoor ? "/data/today" : "/data/today_ext";
+        const data = await (await fetch(url)).json();
+        const labels = data.map(d => d.time);
+        const temp = data.map(d => d.temperature);
+        const press = data.map(d => d.pression);
+        const hum = data.map(d => d.humidite);
+
+        const opt = {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: "#000" } } },
+          scales: { x:{ticks:{color:"#000"}, grid:{color:"#ddd"}}, y:{ticks:{color:"#000"},grid:{color:"#ddd"}} }
+        };
+
+        if(chartTemp) chartTemp.destroy();
+        if(chartPress) chartPress.destroy();
+        if(chartHum) chartHum.destroy();
+
+        chartTemp = new Chart(document.getElementById("chartTemperature"), {
+          type:"line",
+          data:{labels,datasets:[{label:`Température ${isIndoor?"Intérieure":"Extérieure"} (°C)`,data:temp,borderColor:"#ff9900",borderWidth:3,fill:true,backgroundColor:"rgba(255,153,0,0.2)"}]},
+          options:opt
+        });
+        chartPress = new Chart(document.getElementById("chartPression"), {
+          type:"line",
+          data:{labels,datasets:[{label:`Pression ${isIndoor?"Intérieure":"Extérieure"} (hPa)`,data:press,borderColor:"#0099ff",borderWidth:3,fill:true,backgroundColor:"rgba(0,153,255,0.2)"}]},
+          options:opt
+        });
+        chartHum = new Chart(document.getElementById("chartHumidite"), {
+          type:"line",
+          data:{labels,datasets:[{label:`Humidité ${isIndoor?"Intérieure":"Extérieure"} (%)`,data:hum,borderColor:"#33cc33",borderWidth:3,fill:true,backgroundColor:"rgba(51,204,51,0.2)"}]},
+          options:opt
+        });
+      } catch(e){ console.log("Erreur chargement graphiques", e); }
+    }
+
+    document.getElementById("toggleButton").addEventListener("click", () => {
+      isIndoor = !isIndoor;
+      document.getElementById("toggleButton").textContent =
+        `🌡 Graphiques : ${isIndoor ? "Intérieur" : "Extérieur"}`;
+      loadCharts();
+    });
+
+    function init() {
+      setCurrentDay();
+      fetchCurrentWeatherIcon();
+      fetchForecast();
+      loadCurrentWeather();
+      loadCharts();
+    }
+
+    init();
+    setInterval(init, 120000);
+  </script>
+</body>
+</html>
