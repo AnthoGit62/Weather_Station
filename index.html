@@ -166,6 +166,7 @@
   <!-- GAUCHE -->
   <div class="left-panel">
     <button id="toggleButton" class="toggle-btn">🌡 Graphiques : Intérieur</button>
+    <div id="left-date" style="text-align:center; font-weight:bold; color:#0077cc; font-size:1.1rem; margin-top:8px;"></div>
     <div class="chart-container"><canvas id="chartTemperature"></canvas></div>
     <div class="chart-container"><canvas id="chartPression"></canvas></div>
     <div class="chart-container"><canvas id="chartHumidite"></canvas></div>
@@ -174,7 +175,7 @@
   <!-- CENTRE -->
   <div class="center-panel">
     <div class="city">Calais</div>
-    <div class="day" id="current-day">LUNDI</div>
+    <div class="day" id="current-day"></div>
     <img src="img/sun.png" alt="Météo" class="weather-icon" id="weather-icon">
 
     <div class="temps">
@@ -211,10 +212,17 @@
     let isIndoor = true;
 
     function setCurrentDay() {
-      const today = new Date();
-      const options = { weekday: "long" };
-      document.getElementById("current-day").textContent =
-        today.toLocaleDateString("fr-FR", options).toUpperCase();
+      	const today = new Date();
+      	const options = { weekday: "long" };
+      	const dayName = today.toLocaleDateString("fr-FR", options).toUpperCase();
+
+      	const day = String(today.getDate()).padStart(2, "0");
+  	const month = String(today.getMonth() + 1).padStart(2, "0");
+  	const year = today.getFullYear();  
+      	
+	const formattedDate = `${day}/${month}/${year}`;
+
+  	document.getElementById("current-day").textContent = `${dayName} ${formattedDate}`;
     }
 
     function weatherCodeToIcon(code) {
@@ -237,16 +245,19 @@
       const data = await resp.json();
       const container = document.getElementById("forecast");
       container.innerHTML = "";
-      for (let i = 1; i <= 5; i++) {
+      for (let i = 1; i <= 6; i++) {
+	const dateObj = new Date(data.daily.time[i]);
         const day = new Date(data.daily.time[i]).toLocaleDateString("fr-FR", { weekday: "long" });
+	const dayNumber	= dateObj.getDate();
+	const monthName = dateObj.toLocaleDateString("fr-FR", { month: "short" });
         const icon = weatherCodeToIcon(data.daily.weathercode[i]);
         const max = data.daily.temperature_2m_max[i];
         const min = data.daily.temperature_2m_min[i];
         container.innerHTML += `
           <div class="forecast-day">
-            <div>${day.charAt(0).toUpperCase() + day.slice(1)}</div>
+            <div>${day.charAt(0).toUpperCase() + day.slice(1)} ${dayNumber} ${monthName}</div>
             <img src="${icon}" alt="météo">
-            <span>${Math.round(max)}° / ${Math.round(min)}°</span>
+            <span>${Math.round(min)}° / ${Math.round(max)}°</span>
           </div>`;
       }
     }
@@ -273,10 +284,24 @@
 
         if(latestInt) document.getElementById("temp-int").textContent = Math.round(latestInt.temperature) + "°C";
         if(latestExt) document.getElementById("temp-ext").textContent = Math.round(latestExt.temperature) + "°C";
-        if(latestInt) document.getElementById("pression").textContent = latestInt.pression + " hPa";
+        if(latestInt) document.getElementById("pression").textContent = latestInt.pression.toFixed(2) + " hPa";
         if(latestExt) document.getElementById("humidite").textContent = latestExt.humidite + "%";
       } catch(e){ console.log("Erreur météo actuelle", e); }
     }
+    
+    function setLeftPanelDate() {
+        const today = new Date();
+        const options = { weekday: "long" };
+        const dayName = today.toLocaleDateString("fr-FR", options).toUpperCase();
+
+        const day = String(today.getDate()).padStart(2, "0");
+        const month = String(today.getMonth() + 1).padStart(2, "0");
+        const year = today.getFullYear();
+
+        const formattedDate = `${day}/${month}/${year}`;
+        document.getElementById("left-date").textContent = `${dayName} ${formattedDate}`;
+}
+
 
     async function loadCharts() {
       try {
@@ -326,6 +351,7 @@
     function init() {
       setCurrentDay();
       fetchCurrentWeatherIcon();
+      setLeftPanelDate();
       fetchForecast();
       loadCurrentWeather();
       loadCharts();

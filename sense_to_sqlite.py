@@ -9,7 +9,7 @@ import sqlite3
 from datetime import datetime
 import time
 
-DB_PATH = "/home/pi/sae2/app/database.db"
+DB_PATH = "/home/pi/Weather_Station/app/database.db"
 
 def init_db():
     """Créer la table si elle n'existe pas"""
