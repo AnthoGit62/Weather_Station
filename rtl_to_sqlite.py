@@ -16,7 +16,7 @@ import sys
 # -----------------------------
 # Configuration
 # -----------------------------
-DB_PATH = "/home/pi/Weather_Station/app/database.db"  # Chemin de ta base
+DB_PATH = "app/database.db"  # Chemin de ta base
 RTL_CMD = [
     "/usr/local/bin/rtl_433",
     "-f", "868M",

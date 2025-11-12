@@ -82,7 +82,7 @@ class MyHandler(SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     PORT = 8000
     server = HTTPServer(("0.0.0.0", PORT), MyHandler)
-    print(f"🚀 Serveur démarré sur http://172.20.10.2:{PORT}")
+    print(f"🚀 Serveur démarré sur http://10.2.4.32:{PORT}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
