@@ -1,3 +1,4 @@
+import socket
 import sqlite3
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 import json
@@ -55,6 +56,19 @@ def fetch_data(table_name):
     sorted_data = [hourly_data[k] for k in sorted(hourly_data.keys())]
     return sorted_data
 
+def get_local_ip():
+    """Récupère l'adresse IP locale de la machine"""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # ne nécessite pas de connexion réelle
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+    except Exception:
+        ip = "127.0.0.1"
+    finally:
+        s.close()
+    return ip
+
 class MyHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/data/today":
@@ -81,8 +95,9 @@ class MyHandler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     PORT = 8000
+    LOCAL_IP = get_local_ip()
     server = HTTPServer(("0.0.0.0", PORT), MyHandler)
-    print(f"🚀 Serveur démarré sur http://10.2.4.32:{PORT}")
+    print(f"🚀 Serveur démarré sur http://{LOCAL_IP}:{PORT}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
