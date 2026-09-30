@@ -38,6 +38,3 @@ graph LR
 
 <!-- autodoc:end -->
 
----
-
-_Documentation générée par autodoc-agent à partir du code source._
